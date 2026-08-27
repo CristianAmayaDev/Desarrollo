@@ -1,4 +1,7 @@
 require("dotenv").config();
+
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./docs/swagger");
 const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
@@ -7,20 +10,25 @@ const usuariosRoutes =
     require("./routes/usuarios.routes");
 const calculadoraRoutes =
     require("./routes/calculadora.routes");
+
 const {
     rutaNoEncontrada,
     manejarError
 } = require("./middlewares/errores.middleware");
+
 const app = express();
 const PORT = process.env.PORT || 3000;
+
 // ========================================
 // 1. Ocultar tecnología utilizada
 // ========================================
 app.disable("x-powered-by");
+
 // ========================================
 // 2. Cabeceras HTTP de seguridad
 // ========================================
 app.use(helmet());
+
 // ========================================
 // 3. CORS
 // ========================================
@@ -35,6 +43,7 @@ app.use(
         ]
     })
 );
+
 // ========================================
 // 4. Limitar tamaño del JSON
 // ========================================
@@ -43,6 +52,7 @@ app.use(
         limit: "10kb"
     })
 );
+
 // ========================================
 // 5. Rate Limiting
 // ========================================
@@ -56,7 +66,22 @@ const limiter = rateLimit({
             "Demasiadas solicitudes. Intente nuevamente más tarde."
     }
 });
+
 app.use("/api", limiter);
+
+// ========================================
+// Swagger / OpenAPI
+// ========================================
+app.get("/openapi.json", (req, res) => {
+    res.json(swaggerSpec);
+});
+
+app.use(
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec)
+);
+
 // ========================================
 // 6. Ruta inicial
 // ========================================
@@ -65,6 +90,7 @@ app.get("/", (req, res) => {
         mensaje: "API de Seguridad funcionando"
     });
 });
+
 // ========================================
 // 7. Rutas
 // ========================================
@@ -72,18 +98,22 @@ app.use(
     "/api/usuarios",
     usuariosRoutes
 );
+
 app.use(
     "/api/calcular",
     calculadoraRoutes
 );
+
 // ========================================
 // 8. Ruta no encontrada
 // ========================================
 app.use(rutaNoEncontrada);
+
 // ========================================
 // 9. Manejo centralizado de errores
 // ========================================
 app.use(manejarError);
+
 // ========================================
 // 10. Servidor
 // ========================================
